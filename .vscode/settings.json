@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "rfm69registers.h": "c",
+        "millis.h": "c",
+        "spi.h": "c"
+    }
+}
