@@ -40,6 +40,7 @@
 #include "RFM69.h"
 #include "millis.h"
 #include <stdio.h>
+#include "xorrand.h"
 
 
 
@@ -134,7 +135,7 @@ void rfm69_init(uint16_t freqBand)
     inISR = 0;
     sei();
 }
-
+/*
 uint8_t canSend()
 {
     // Checks if signal strength higher than -90dBm
@@ -147,12 +148,60 @@ uint8_t canSend()
     }
     return 0;
 }
+*/
 
-// Transmit data
-void send(const void* buffer, uint8_t bufferSize)
+// ==============================================================================
+// ADI LAB 2 construct below
+// ==============================================================================
+
+uint8_t canSend()
 {
-    writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART); // avoid RX deadlocks
-    // Send data out
+    // Checks if transceiver is in RX mode, buffer is empty, and RSSI < -90 dBm
+    if (mode == RF69_MODE_RX && PAYLOADLEN == 0 && readRSSI(0) < CSMA_LIMIT) 
+    {
+        setMode(RF69_MODE_STANDBY);
+        return 1;
+    }
+    return 0; // Channel is busy or not in RX mode!
+}
+
+// 0-Persistent CSMA: Sense once; if busy, sleep for a random backoff and repeat
+void send0(const void* buffer, uint8_t bufferSize)
+{
+    if (mode != RF69_MODE_RX) {
+        setMode(RF69_MODE_RX);
+    }
+    while (!canSend())
+    {
+        // Pick random backoff between 10 ms and 59 ms
+        uint16_t backoff = 10 + (get_rand() % 50);
+        printf("0-CSMA Busy! Backoff: %u ms\r\n", backoff);
+        setMode(RF69_MODE_STANDBY);
+
+        uint32_t start_time = millis();
+        while (millis() - start_time < backoff)
+        {
+        }
+        // Re-enable RX mode so the next loop's canSend() can measure RSSI
+        setMode(RF69_MODE_RX);
+    }
+
+    writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART);
+    sendFrame(buffer, bufferSize);
+}
+
+// 1-Persistent CSMA: Sense continuously in RX mode until idle, then transmit immediately
+void send1(const void* buffer, uint8_t bufferSize)
+{
+    if (mode != RF69_MODE_RX) {
+        setMode(RF69_MODE_RX);
+    }
+    while (!canSend())
+    {
+        // keep polling RSSI!
+    }
+
+    writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART);
     sendFrame(buffer, bufferSize);
 }
 
