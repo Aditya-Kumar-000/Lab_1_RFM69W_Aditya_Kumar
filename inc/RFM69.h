@@ -91,6 +91,8 @@ void rfm69_init(uint16_t freqBand);
 void setAddress(uint8_t addr);
 uint8_t canSend();
 void send( const void* buffer, uint8_t bufferSize);
+void send0(const void* buffer, uint8_t bufferSize);
+void send1(const void* buffer, uint8_t bufferSize);
 void receiveBegin();
 uint8_t receiveDone();
 uint32_t getFrequency();
