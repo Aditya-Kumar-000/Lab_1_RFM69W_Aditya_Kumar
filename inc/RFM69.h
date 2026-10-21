@@ -85,6 +85,8 @@
 
 // Global Variables
 extern volatile uint8_t DATA[RF69_MAX_DATA_LEN+1];  // RX/TX payload buffer, including end of string NULL char
+extern volatile int16_t RSSI;
+
 
 // Function Declerations
 void rfm69_init(uint16_t freqBand);
