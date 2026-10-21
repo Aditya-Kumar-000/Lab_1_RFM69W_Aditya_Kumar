@@ -465,3 +465,30 @@ ISR(INT_VECT)
     inISR = 0;
     
 }
+
+// Physical Layer Implementation
+uint8_t phy_is_channel_idle(void) {
+    if (mode != RF69_MODE_RX) {
+        setMode(RF69_MODE_RX);
+    }
+    // Check RSSI against threshold
+    return (readRSSI(0) < CSMA_LIMIT) ? 1 : 0;
+}
+
+uint8_t phy_rx_buffer_has_data(void) {
+    return (PAYLOADLEN > 0) ? 1 : 0;
+}
+
+void phy_set_rx(void) {
+    receiveBegin();
+}
+
+void phy_set_standby(void) {
+    setMode(RF69_MODE_STANDBY);
+}
+
+void phy_transmit(const void* buffer, uint8_t bufferSize) {
+    writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART);
+    sendFrame(buffer, bufferSize);
+    receiveBegin(); // Return to RX mode automatically after transmission
+}
