@@ -156,56 +156,58 @@ uint8_t canSend()
 
 uint8_t canSend()
 {
-    // Checks if transceiver is in RX mode, buffer is empty, and RSSI < -90 dBm
     if (mode == RF69_MODE_RX && PAYLOADLEN == 0 && readRSSI(0) < CSMA_LIMIT) 
     {
         setMode(RF69_MODE_STANDBY);
         return 1;
     }
-    return 0; // Channel is busy or not in RX mode!
-}
+    return 0;
+} // <--- Closing brace for canSend()
 
-// 0-Persistent CSMA: Sense once; if busy, sleep for a random backoff and repeat
 void send0(const void* buffer, uint8_t bufferSize)
 {
     if (mode != RF69_MODE_RX) {
-        setMode(RF69_MODE_RX);
+        receiveBegin();
     }
+
     while (!canSend())
     {
-        // Pick random backoff between 10 ms and 59 ms
-        uint16_t backoff = 10 + (get_rand() % 50);
-        printf("0-CSMA Busy! Backoff: %u ms\r\n", backoff);
-        setMode(RF69_MODE_STANDBY);
+        if (receiveDone()) {
+            printf("RX (while waiting): %s\r\n", (char *)DATA);
+        }
 
+        uint16_t backoff = 10 + (get_rand() % 50);
+
+        setMode(RF69_MODE_STANDBY);
         uint32_t start_time = millis();
         while (millis() - start_time < backoff)
         {
         }
-        // Re-enable RX mode so the next loop's canSend() can measure RSSI
-        setMode(RF69_MODE_RX);
+
+        receiveBegin();
     }
 
     writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART);
     sendFrame(buffer, bufferSize);
-}
+} // <--- Closing brace for send0()
 
-// 1-Persistent CSMA: Sense continuously in RX mode until idle, then transmit immediately
 void send1(const void* buffer, uint8_t bufferSize)
 {
     if (mode != RF69_MODE_RX) {
-        setMode(RF69_MODE_RX);
+        receiveBegin();
     }
+
     while (!canSend())
     {
-        // keep polling RSSI!
+        if (receiveDone()) {
+            printf("RX (while waiting): %s\r\n", (char *)DATA);
+            receiveBegin();
+        }
     }
 
     writeReg(REG_PACKETCONFIG2, (readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART);
     sendFrame(buffer, bufferSize);
-}
-
-
+} 
 // set *transmit/TX* output power: 0=min, 31=max
 // this results in a "weaker" transmitted signal, and directly results in a lower RSSI at the receiver
 // the power configurations are explained in the SX1231H datasheet (Table 10 on p21; RegPaLevel p66): http://www.semtech.com/images/datasheet/sx1231h.pdf
