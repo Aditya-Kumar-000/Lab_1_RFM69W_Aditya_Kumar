@@ -5,23 +5,26 @@ CC = avr-gcc
 INC = inc
 OBJDIR = obj
 
-# Source files (If you're adding extra source files be sure to add them in here)
-SRC = main.c src/millis.c src/RFM69.c src/spi.c src/uart.c src/xorrand.c
+# Source files (Line 9: Added src/mac.c here!)
+SRC = main.c src/millis.c src/RFM69.c src/spi.c src/uart.c src/xorrand.c src/mac.c
 
 # Compiler and linker flags. Note F_CPU is already defined here!
 CFLAGS = -mmcu=atmega644p -Os -Wall -DF_CPU=12000000UL -I$(INC) -std=c99
 LDFLAGS = -mmcu=atmega644p
 
-# Object files helper macro
-# OBJ = $(SRC:%.c=$(OBJDIR)/%.o)
-OBJECTS = obj/main.o obj/src/millis.o obj/src/RFM69.o obj/src/spi.o obj/src/uart.o obj/src/xorrand.o obj/src/mac.o
+# Object files helper macro (Automatically generates obj/src/mac.o from SRC)
+OBJ = $(SRC:%.c=$(OBJDIR)/%.o)
 
 # Default make target when run with no arguments
 all: build
 
-# Compile source files into object files
-$(OBJDIR)/main.elf: $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+# Compile source files into object files (CRITICAL: Do not delete this!)
+$(OBJDIR)/%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Link object files into the final executable
+$(OBJDIR)/main.elf: $(OBJ)
+	$(CC) $(LDFLAGS) $(OBJ) -o $@
 
 # Convert elf to a hex file for flashing
 $(OBJDIR)/main.hex: $(OBJDIR)/main.elf
