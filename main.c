@@ -20,24 +20,25 @@ int main(void) {
   uint32_t last_tx_time = 0;
   char testing[] = "Test string 1";
   while (1) {
-// +++++++++++++++ RECEIVE +++++++++++++++++
-    // Your code here
-    if (receiveDone()) {
-      printf("RX: %s\r\n", (char *)DATA);
+        // Indication: Service provider alerts upper layer of incoming frame
+        if (receiveDone()) {
+            printf("RX: %s (RSSI: %d)\r\n", (char *)DATA, RSSI);
+        }
+
+        // Request / Confirm: Send periodically once per second[cite: 11, 15]
+        if (millis() - last_tx_time >= 1000) {
+            mac_status_t status = mac_send_0_persistent((const void *)testing, 8);
+
+            if (status == MAC_SUCCESS) {
+                printf("TX: %s [OK]\r\n", testing);
+            } else if (status == MAC_RX_BUFFER_OCCUPIED) {
+                printf("TX Defer: Packet arriving, drained RX buffer\r\n");
+                receiveDone(); // Drain buffer to clear deadlock
+            } else {
+                printf("TX Busy: Channel congested\r\n");
+            }
+
+            last_tx_time = millis();
+        }
     }
-
-// +++++++++++++++ TRANSMISSION +++++++++++++    
-
-
-    if (millis() - last_tx_time >= 1000) 
-    {
-      if (canSend()) 
-      {
-        // Call send0 (0-persistent) or send1 (1-persistent)
-        send((const void *)testing, sizeof(testing));
-        printf("TX: %s\r\n", testing);
-        last_tx_time = millis(); // resets the timer
-      }
-    }
-  }
 }
