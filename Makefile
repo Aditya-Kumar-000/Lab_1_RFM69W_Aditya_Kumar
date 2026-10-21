@@ -13,7 +13,8 @@ CFLAGS = -mmcu=atmega644p -Os -Wall -DF_CPU=12000000UL -I$(INC) -std=c99
 LDFLAGS = -mmcu=atmega644p
 
 # Object files helper macro
-OBJ = $(SRC:%.c=$(OBJDIR)/%.o)
+# OBJ = $(SRC:%.c=$(OBJDIR)/%.o)
+OBJECTS = obj/main.o obj/src/millis.o obj/src/RFM69.o obj/src/spi.o obj/src/uart.o obj/src/xorrand.o obj/src/mac.o
 
 # Default make target when run with no arguments
 all: build
