@@ -111,6 +111,12 @@ void select();
 void unselect();
 uint8_t receiveDone();
 void setChannel(uint8_t channel);
+// Physical Layer Primitives (Hardware Abstraction)
+uint8_t phy_is_channel_idle(void);
+uint8_t phy_rx_buffer_has_data(void);
+void phy_set_rx(void);
+void phy_set_standby(void);
+void phy_transmit(const void* buffer, uint8_t bufferSize);
 
 #endif
 
