@@ -20,12 +20,8 @@ OBJECTS = obj/main.o obj/src/millis.o obj/src/RFM69.o obj/src/spi.o obj/src/uart
 all: build
 
 # Compile source files into object files
-$(OBJDIR)/%.o: %.c | $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Link object files into the final executable
-$(OBJDIR)/main.elf: $(OBJ)
-	$(CC) $(LDFLAGS) $(OBJ) -o $@
+$(OBJDIR)/main.elf: $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
 # Convert elf to a hex file for flashing
 $(OBJDIR)/main.hex: $(OBJDIR)/main.elf
